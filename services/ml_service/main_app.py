@@ -44,6 +44,8 @@ curl -X 'POST' \
 
 app = FastAPI()
 app.handler = FastApiHandler()
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app)
 
 class ModelParams(BaseModel):
     age: float
