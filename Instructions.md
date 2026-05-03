@@ -124,17 +124,47 @@ P.S. Dockerfile находится внутри папки services под на�
 ## 3. Docker compose для микросервиса и системы моониторинга
 
 ```bash
-# команда перехода в нужную директорию
+#(из корневой папки проекта)
+cd services
+docker compose up --build
 
-# команда для запуска микросервиса в режиме docker compose
 
 ```
+
+микросервис находится по адресу: localhost:1702
+Prometheus : localhost:9090
+Grafana : localhost:3000
+
+P.S. для Прометея и Графаны нужно вручную перенаправить порты
+
+
+
 
 ### Пример curl-запроса к микросервису
 
 ```bash
-curl -X 'POST' \
-  'http://localhost:
+curl -X POST \
+  'http://localhost:1702/api/price/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_id": "user_123",
+    "model_params": {
+      "age": 15,
+      "building_type_int": 2,
+      "latitude": 55.7558,
+      "longitude": 37.6173,
+      "ceiling_height": 2.9,
+      "flats_count": 85,
+      "floors_total": 9,
+      "has_elevator": true,
+      "floor": 4,
+      "kitchen_area": 12.5,
+      "living_area": 42.3,
+      "rooms": 3,
+      "is_apartment": true,
+      "studio": false,
+      "total_area": 65.8}
+    }'
 ```
 
 ## 4. Скрипт симуляции нагрузки
