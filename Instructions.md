@@ -26,6 +26,7 @@ uvicorn main_app:app --reload --port 8081 --host 0.0.0.0
 ### Пример curl-запроса к микросервису
 
 ```bash
+
 curl -X 'POST' \
   'http://localhost:8081/api/price/' \
   -H 'accept: application/json' \
@@ -53,21 +54,72 @@ curl -X 'POST' \
 
 ```
 
+Возвращает:
+
+```
+{
+  "user_id": "user_123",
+  "prediction": 32105205.888474908
+}
+```
+
 
 ## 2. FastAPI микросервис в Docker-контейнере
+
+(все команды выполняются из поддиректории services)
+в условии указано запускать без Docker Compose
 
 ```bash
 cd services
 
-# команда для запуска микросервиса в режиме docker compose
+export $(grep -v '^#' .env | xargs)
+
+docker image build \
+  --build-arg AUTHOR=${AUTHOR} \
+  --build-arg APP_PORT=${APP_PORT} \
+  --tag ml_service:latest \
+  -f Dockerfile_ml_service \
+  .
+
+docker container run \
+  --name ml_service \
+  --env APP_PORT=${APP_PORT} \
+  --publish ${APP_PORT}:${APP_PORT} \
+  --detach \
+  ml_service:latest
 ```
 
 ### Пример curl-запроса к микросервису
 
 ```bash
-curl -X 'POST' \
-  'http://localhost:...' \
+
+curl -X POST \
+  'http://localhost:1702/api/price/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_id": "user_123",
+    "model_params": {
+      "age": 15,
+      "building_type_int": 2,
+      "latitude": 55.7558,
+      "longitude": 37.6173,
+      "ceiling_height": 2.9,
+      "flats_count": 85,
+      "floors_total": 9,
+      "has_elevator": true,
+      "floor": 4,
+      "kitchen_area": 12.5,
+      "living_area": 42.3,
+      "rooms": 3,
+      "is_apartment": true,
+      "studio": false,
+      "total_area": 65.8}
+    }'
 ```
+
+Ответ сервиса : {"user_id":"user_123","prediction":32105205.888474908}(.spr3_venv)
+
+P.S. Dockerfile находится внутри папки services под названием 'Dockerfile_ml_service'
 
 ## 3. Docker compose для микросервиса и системы моониторинга
 
