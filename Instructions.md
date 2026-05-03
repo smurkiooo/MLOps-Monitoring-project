@@ -7,6 +7,7 @@
 ```python
 # команды создания виртуального окружения
 # и установки необходимых библиотек в него
+
 python3 -m venv .spr3_venv
 source .spr3_venv/bin/activate
 
@@ -17,9 +18,9 @@ cd ml_service
 
 
 # команда запуска сервиса с помощью uvicorn
-```
 uvicorn main_app:app --reload --port 8081 --host 0.0.0.0
 ```
+
 
 
 
