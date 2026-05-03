@@ -4,9 +4,8 @@ from fastapi_handler import FastApiHandler
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 import numpy as np
-from prometheus_client import Histogram
-from prometheus_client import Counter
-
+from prometheus_client import Histogram, Counter, Gauge
+import time
 
 '''
 
@@ -69,14 +68,44 @@ class PredictRequest(BaseModel):
     user_id: str
     model_params: ModelParams
 
-@app.get('/api/price/')
-def greet_user():
-    return {'cообщение' : ' ожидаю POST запрос на этот адрес с параметрами квартиры для которой хочешь узнать цену'}
 
-@app.post('/api/price/')
+
+# общее число предсказаний с разбивкой по статусу (success / error)
+prediction_requests_total = Counter(
+    "prediction_requests_total",
+    "общее кол-во запросов на предсказание",
+    ["status"],
+)
+
+# распределение предсказанных цен 
+prediction_value_rubles = Histogram(
+    "prediction_value",
+    "распределение предсказанных цен в рублях",
+    buckets=[1e6, 3e6, 5e6, 8e6, 12e6, 20e6, 35e6, 60e6, 100e6],
+)
+
+# время обработки последнего запроса в секундах
+last_prediction_latency_seconds = Gauge(
+    "last_prediction_latency_seconds",
+    "время обработки последнего запроса в секундах",
+)
+
+@app.post("/api/price/")
 def price_prediction(request: PredictRequest):
     all_params = {
         "user_id": request.user_id,
-        "model_params": request.model_params.model_dump()
+        "model_params": request.model_params.model_dump(),
     }
-    return app.handler.handle(all_params)
+    t0 = time.perf_counter()                        
+    result = app.handler.handle(all_params)
+    t1 = time.perf_counter() - t0              
+
+    last_prediction_latency_seconds.set(t1)    
+
+    if "prediction" in result:
+        prediction_requests_total.labels(status="success").inc()  
+        prediction_value_rubles.observe(result["prediction"])     
+    else:
+        prediction_requests_total.labels(status="error").inc()    
+
+    return result
